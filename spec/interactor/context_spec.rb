@@ -1,5 +1,9 @@
 module Interactor
   describe Context do
+    it "inherits directly from Object, not OpenStruct" do
+      expect(Context.superclass).to eq(Object)
+    end
+
     describe ".build" do
       it "converts the given hash to a context" do
         context = Context.build(foo: "bar")
@@ -12,7 +16,7 @@ module Interactor
         context = Context.build
 
         expect(context).to be_a(Context)
-        expect(context.send(:table)).to eq({})
+        expect(context.to_h).to eq({})
       end
 
       it "doesn't affect the original hash" do
