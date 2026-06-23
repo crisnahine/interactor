@@ -1,3 +1,16 @@
+## 4.0.0 / 2026-03-06
+
+* [BREAKING] Replace `OpenStruct` with a plain hash-backed `Context` implementation.
+  `Interactor::Context` no longer inherits from `OpenStruct`. All documented public
+  API (`context.foo`, `context.foo = value`, `[]`, `[]=`, `to_h`, `fail!`, `success?`,
+  `failure?`, `rollback!`, `deconstruct_keys`) is fully preserved.
+
+  **Migration:** If your code checks `context.is_a?(OpenStruct)`, or calls OpenStruct
+  methods not part of the Interactor API (`each_pair`, `marshal_dump`, etc.), update
+  those callsites. Otherwise, no changes are required.
+
+* [ENHANCEMENT] Remove `ostruct` runtime dependency — no gem dependency required.
+
 ## 3.2.0 / 2025-07-10
 * [BUGFIX] Raise failures from nested contexts [#170]
 * [FEATURE] Add `ostruct` dependency to gemspec.

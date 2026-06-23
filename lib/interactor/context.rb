@@ -1,5 +1,3 @@
-require "ostruct"
-
 module Interactor
   # Public: The object for tracking state of an Interactor's invocation. The
   # context is used to initialize the interactor with the information required
@@ -28,7 +26,7 @@ module Interactor
   #   # => "baz"
   #   context
   #   # => #<Interactor::Context foo="baz" hello="world">
-  class Context < OpenStruct
+  class Context
     # Internal: Initialize an Interactor::Context or preserve an existing one.
     # If the argument given is an Interactor::Context, the argument is returned.
     # Otherwise, a new Interactor::Context is initialized from the provided
@@ -58,6 +56,68 @@ module Interactor
       else
         new(context)
       end
+    end
+
+    # Internal: Initialize an Interactor::Context from a Hash of key/value
+    # pairs. Keys are stored as symbols.
+    #
+    # data - A Hash whose key/value pairs populate the context. (default: {})
+    #
+    # Returns nothing.
+    def initialize(data = {})
+      @table = {}
+      data.to_h.each { |k, v| @table[k.to_sym] = v }
+    end
+
+    # Internal: Read a value from the context by key.
+    #
+    # key - A Symbol or String key.
+    #
+    # Returns the stored value or nil.
+    def [](key)
+      @table[key.to_sym]
+    end
+
+    # Internal: Write a value into the context by key.
+    #
+    # key   - A Symbol or String key.
+    # value - The value to store.
+    #
+    # Returns the value.
+    def []=(key, value)
+      @table[key.to_sym] = value
+    end
+
+    # Public: Return the context as a plain Hash.
+    #
+    # Returns a Hash.
+    def to_h
+      @table.dup
+    end
+
+    # Public: Equality check based on stored attributes.
+    #
+    # other - Another object to compare.
+    #
+    # Returns true if both are a Context with identical attributes.
+    def ==(other)
+      other.is_a?(self.class) && other.to_h == to_h
+    end
+
+    # Internal: Human-readable representation of the context.
+    #
+    # Returns a String.
+    def inspect
+      pairs = @table.map { |k, v| "#{k}=#{v.inspect}" }.join(", ")
+      pairs.empty? ? "#<#{self.class}>" : "#<#{self.class} #{pairs}>"
+    end
+
+    # Internal: String representation (used as the exception message in
+    # Interactor::Failure).
+    #
+    # Returns a String.
+    def to_s
+      inspect
     end
 
     # Public: Whether the Interactor::Context is successful. By default, a new
@@ -207,6 +267,51 @@ module Interactor
         success: success?,
         failure: failure?
       )
+    end
+
+    private
+
+    # Internal: Give a duplicated or cloned context its own copy of the
+    # underlying store, so mutating the copy does not bleed into the original.
+    #
+    # other - The Interactor::Context being copied from.
+    #
+    # Returns nothing.
+    def initialize_copy(other)
+      super
+      @table = other.to_h
+    end
+
+    # Internal: Handle dynamic attribute accessors not defined on the class. A
+    # name ending in "=" stores a value; any other name reads one. A reader
+    # called with arguments raises, matching a real zero-arity accessor.
+    #
+    # name - A Symbol method name.
+    # args - Arguments passed to the method.
+    #
+    # Returns the stored value for a getter, or sets and returns the value for
+    #   a setter.
+    def method_missing(name, *args)
+      if (key = name.to_s.chomp!("="))
+        @table[key.to_sym] = args.first
+      elsif args.empty?
+        @table[name]
+      else
+        raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0)"
+      end
+    end
+
+    # Internal: Report which dynamic accessors the context supports: any setter,
+    # and a reader for a key that has been set. Keeping this honest stops the
+    # context from claiming it responds to implicit conversions such as to_ary,
+    # to_hash, and to_str, which would otherwise be dispatched here and return
+    # nil where the caller expects an Array, Hash, or String.
+    #
+    # name - A Symbol method name.
+    #
+    # Returns true for a setter or an existing key, otherwise defers to super.
+    def respond_to_missing?(name, include_private = false)
+      name.to_s.end_with?("=") || @table.key?(name.to_sym) || super
     end
   end
 end

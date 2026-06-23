@@ -114,9 +114,7 @@ module Interactor
   def run
     run!
   rescue Failure => e
-    if context.object_id != e.context.object_id
-      raise
-    end
+    raise unless context.equal?(e.context)
   end
 
   # Internal: Invoke an Interactor instance along with all defined hooks. The

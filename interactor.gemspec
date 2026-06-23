@@ -2,7 +2,7 @@ require "English"
 
 Gem::Specification.new do |spec|
   spec.name = "interactor"
-  spec.version = "3.2.0"
+  spec.version = "4.0.0"
 
   spec.author = "Collective Idea"
   spec.email = "info@collectiveidea.com"
@@ -13,7 +13,6 @@ Gem::Specification.new do |spec|
 
   spec.files = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
 
-  spec.add_dependency "ostruct"
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
 end

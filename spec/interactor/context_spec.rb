@@ -1,5 +1,56 @@
 module Interactor
   describe Context do
+    it "inherits directly from Object, not OpenStruct" do
+      expect(Context.superclass).to eq(Object)
+    end
+
+    describe "#respond_to?" do
+      let(:context) { Context.build(foo: "bar") }
+
+      it "responds to a set attribute" do
+        expect(context.respond_to?(:foo)).to eq(true)
+      end
+
+      it "does not respond to an unset attribute" do
+        expect(context.respond_to?(:bar)).to eq(false)
+      end
+
+      it "responds to any setter" do
+        expect(context.respond_to?(:bar=)).to eq(true)
+      end
+
+      it "does not advertise implicit conversions it cannot satisfy" do
+        expect(context.respond_to?(:to_ary)).to eq(false)
+        expect(context.respond_to?(:to_hash)).to eq(false)
+        expect(context.respond_to?(:to_str)).to eq(false)
+      end
+    end
+
+    describe "dynamic readers" do
+      let(:context) { Context.build(foo: "bar") }
+
+      it "returns nil for an unset attribute" do
+        expect(context.baz).to eq(nil)
+      end
+
+      it "raises when a reader is called with arguments" do
+        expect { context.foo("extra") }.to raise_error(ArgumentError)
+      end
+    end
+
+    describe "#dup" do
+      it "does not share state with the original" do
+        context = Context.build(foo: "bar")
+        copy = context.dup
+
+        expect {
+          copy.foo = "baz"
+        }.not_to change {
+          context.foo
+        }
+      end
+    end
+
     describe ".build" do
       it "converts the given hash to a context" do
         context = Context.build(foo: "bar")
@@ -12,7 +63,7 @@ module Interactor
         context = Context.build
 
         expect(context).to be_a(Context)
-        expect(context.send(:table)).to eq({})
+        expect(context.to_h).to eq({})
       end
 
       it "doesn't affect the original hash" do
